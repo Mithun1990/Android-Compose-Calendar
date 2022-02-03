@@ -22,7 +22,8 @@ fun Date.getWeekDay(): Int {
 
 fun Date.formattedDate(): Date {
     val sdf = SimpleDateFormat(Constants.PREFER_DATE_FORMAT, Locale.ENGLISH)
-    return sdf.parse(sdf.format(getInstance().time.toString()))
+    val tempDate = sdf.format(getInstance().time).toString()
+    return sdf.parse(tempDate)
         ?: this
 }
 
