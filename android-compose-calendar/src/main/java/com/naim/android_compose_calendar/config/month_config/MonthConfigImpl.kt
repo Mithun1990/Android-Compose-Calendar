@@ -10,12 +10,17 @@ import com.naim.android_compose_calendar.model.MonthItem
 import java.util.*
 
 class MonthConfigImpl(private val weekConfig: IWeekConfig) : BaseMonthConfig(), IMonthConfig {
-    override fun getMonthItems(date: Date, holidayList: List<Int>): List<MonthItem> {
+    override fun getMonthItems(
+        date: Date,
+        holidayList: List<Int>,
+        listOfDisableDate: List<Date>
+    ): List<MonthItem> {
         val monthItems = mutableListOf<MonthItem>()
         val month = configureMonth(date, holidayList)
         monthItems.addAll(addPreviousMonthExtraDay(month))
         monthItems.addAll(addCurrentMonthDay(month))
         monthItems.addAll(addNextMonthExtraDay(month))
+        println("Month ${monthItems}")
         return monthItems
     }
 
