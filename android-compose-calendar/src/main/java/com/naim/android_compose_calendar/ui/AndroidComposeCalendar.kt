@@ -32,7 +32,6 @@ import com.naim.android_compose_calendar.extensions.getTheDay
 import com.naim.android_compose_calendar.model.MonthItem
 import com.naim.android_compose_calendar.state.CalendarUiState
 import com.naim.android_compose_calendar.viewmodel.CalendarViewModel
-import java.util.*
 
 @OptIn(ExperimentalUnitApi::class)
 @Composable
@@ -40,6 +39,18 @@ fun AndroidComposeCalendar(viewModel: CalendarViewModel) {
 
     val weekImpl = IWeekConfigImpl()
     val monthConfig = MonthConfigImpl(weekImpl)
+    calendarUI(monthConfig, weekImpl, viewModel)
+}
+
+@OptIn(ExperimentalUnitApi::class)
+@Composable
+fun calendarUI(
+    monthConfig: MonthConfigImpl,
+    weekConfigImpl: IWeekConfigImpl,
+    viewModel: CalendarViewModel
+) {
+    var state = viewModel.uiState.observeAsState()
+    var stateMonth = viewModel.monthItems.observeAsState()
     Column {
         Row(
             modifier = Modifier
@@ -73,28 +84,35 @@ fun AndroidComposeCalendar(viewModel: CalendarViewModel) {
                     )
                 )
             )
-            Icon(
-                painter = painterResource(id = R.drawable.icon_right_arriw_month),
-                contentDescription = "Next Year",
-                Modifier
-                    .padding(10.dp)
-                    .size(24.dp)
-            )
+            IconButton(onClick = { viewModel.nextMonth() }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_right_arriw_month),
+                    contentDescription = "Next Month",
+                    Modifier
+                        .padding(10.dp)
+                        .size(24.dp)
+                )
+            }
+
             Icon(
                 painter = painterResource(id = R.drawable.icon_right_arriw_year),
-                contentDescription = "Next Month",
+                contentDescription = "Next Year",
                 Modifier
                     .padding(10.dp)
                     .size(24.dp)
             )
 
         }
-        var state = viewModel.uiState.observeAsState()
-        viewModel.selectedDate(Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 9) }.time)
-        CalendarWeekRow(weekImpl)
-        CalendarMonthColumn(monthConfigImpl = monthConfig, viewModel, state.value!!)
-    }
 
+//        viewModel.selectedDate(Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 9) }.time)
+        CalendarWeekRow(weekConfigImpl)
+        CalendarMonthColumn(
+            monthConfigImpl = monthConfig,
+            viewModel,
+            state.value!!,
+            stateMonth.value!!
+        )
+    }
 }
 
 @Composable
@@ -131,10 +149,9 @@ fun CalendarWeekRow(weekConfigImpl: IWeekConfigImpl) {
 fun CalendarMonthColumn(
     monthConfigImpl: MonthConfigImpl,
     viewModel: CalendarViewModel,
-    state: CalendarUiState
+    state: CalendarUiState,
+    monthItems: List<MonthItem>
 ) {
-    val monthItems = monthConfigImpl.getMonthItems(Date(), emptyList())
-
     println("Month ${state!!.selectedDate}")
     Column {
         LazyColumn {
