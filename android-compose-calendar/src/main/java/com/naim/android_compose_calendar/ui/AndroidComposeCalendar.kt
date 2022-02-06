@@ -1,5 +1,6 @@
 package com.naim.android_compose_calendar.ui
 
+import android.provider.Contacts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,28 +22,32 @@ import androidx.compose.ui.unit.ExperimentalUnitApi
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import com.naim.android_compose_calendar.R
 import com.naim.android_compose_calendar.config.month_config.MonthConfigImpl
 import com.naim.android_compose_calendar.config.week_config.IWeekConfigImpl
+import com.naim.android_compose_calendar.dispatch_provider.IDispatchProvider
+import com.naim.android_compose_calendar.events.CalendarEvent
 import com.naim.android_compose_calendar.extensions.formattedDate
 import com.naim.android_compose_calendar.extensions.getTheDay
 import com.naim.android_compose_calendar.model.MonthItem
+import java.time.Year
 import java.util.*
 
 @OptIn(ExperimentalUnitApi::class)
 @Composable
-@Preview
-fun AndroidComposeCalendar() {
+fun AndroidComposeCalendar(uiViewModel: UIViewModel) {
     val weekImpl = IWeekConfigImpl()
     val monthConfig = MonthConfigImpl(weekImpl)
-//    Column {
-//        Row(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(start = 10.dp, end = 10.dp, top = 20.dp),
-//            verticalAlignment = Alignment.Top,
-//            horizontalArrangement = Arrangement.SpaceEvenly
-//        ) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 10.dp, end = 10.dp, top = 20.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
 //            IconButton(onClick = { monthConfig.getMonthList(2021) }) {
 //                Icon(
 //                    painter = painterResource(id = R.drawable.icon_left_arriw_year),
@@ -58,15 +64,27 @@ fun AndroidComposeCalendar() {
 //                    .padding(10.dp)
 //                    .size(24.dp)
 //            )
-//            Text(
-//                text = "January, 2021",
-//                Modifier.padding(10.dp),
-//                style = TextStyle(
-//                    color = Color.DarkGray, fontSize = TextUnit(
-//                        16f, TextUnitType.Sp
-//                    )
-//                )
-//            )
+            Text(
+                text = "January, 2021",
+                Modifier
+                    .padding(10.dp)
+                    .clickable {
+                        uiViewModel.getNewMonth(
+                            Calendar
+                                .getInstance()
+                                .apply {
+                                    set(Calendar.YEAR, 2022)
+                                    set(Calendar.MONTH, 2)
+                                    set(Calendar.DAY_OF_MONTH, 1)
+                                }.time, emptyList()
+                        )
+                    },
+                style = TextStyle(
+                    color = Color.DarkGray, fontSize = TextUnit(
+                        16f, TextUnitType.Sp
+                    )
+                )
+            )
 //            Icon(
 //                painter = painterResource(id = R.drawable.icon_right_arriw_month),
 //                contentDescription = "Next Year",
@@ -81,12 +99,12 @@ fun AndroidComposeCalendar() {
 //                    .padding(10.dp)
 //                    .size(24.dp)
 //            )
-//
-//        }
-//
-//    }
+
+        }
+
+    }
     CalendarWeekRow(weekImpl)
-    CalendarMonthColumn(monthConfigImpl = monthConfig)
+    CalendarMonthColumn(monthConfigImpl = monthConfig, uiViewModel)
 }
 
 @Composable
@@ -109,31 +127,33 @@ fun CalendarWeekRow(weekConfigImpl: IWeekConfigImpl) {
 }
 
 @Composable
-fun CalendarMonthColumn(monthConfigImpl: MonthConfigImpl) {
-    val monthItems = monthConfigImpl.getMonthItems(Date(), emptyList())
-    var selectedDate by remember {
-        mutableStateOf(Date())
-    }
+fun CalendarMonthColumn(monthConfigImpl: MonthConfigImpl, uiViewModel: UIViewModel) {
+    uiViewModel.getNewMonth(
+        Calendar
+            .getInstance()
+            .apply {
+                set(Calendar.YEAR, 2022)
+                set(Calendar.MONTH, 0)
+                set(Calendar.DAY_OF_MONTH, 1)
+            }.time, emptyList()
+    )
+    val monthItems = uiViewModel.monthItems.observeAsState()
+//    var selectedDate by remember {
+//        mutableStateOf(Date())
+//    }
+    var selectedDate = uiViewModel.ud.observeAsState()
     LazyColumn {
-
-        gridView(monthItems, gridColumn = 7, selectedDate, { selectedDate = it }) { item ->
+        gridView(
+            monthItems.value as List<MonthItem>,
+            gridColumn = 7,
+            selectedDate.value?.d!!.value,
+            { uiViewModel.setVal(it) }) { item ->
             Text(
                 text = item.date!!.getTheDay().toString(),
                 textAlign = TextAlign.Center
             )
         }
     }
-
-//    val noOfRow = monthItems.size / 7;
-//    for (i in 0 until noOfRow) {
-//        println("Month ${i * 7} ${i * 7 + 6}")
-//        CalendarMonthRow(
-//            monthItems.subList(
-//                i * 7,
-//                if (i * 7 + 7 > monthItems.size - 1) monthItems.size else i * 7 + 7
-//            )
-//        )
-//    }
 }
 
 @Composable
@@ -203,5 +223,41 @@ fun <T> LazyListScope.gridView(
                 }
             }
         }
+    }
+}
+
+sealed class UIState {
+    class DateSelection(var selectedDate: Date) : UIState()
+}
+
+
+data class UIS(val d: MutableState<Date> = mutableStateOf(Date()))
+
+class UIViewModel : ViewModel() {
+
+    private var _ud = MutableLiveData(UIS())
+    val ud = _ud
+
+    private var _ui = MutableLiveData(UIState.DateSelection(Date()))
+    private var uiUIState = MutableLiveData(
+        MonthConfigImpl(IWeekConfigImpl()).getMonthItems(Date(), emptyList())
+    )
+    val ui = _ui
+    val monthItems = uiUIState
+    fun setUI(value: Date) {
+        _ui.value = UIState.DateSelection(value)
+    }
+
+    fun setVal(value: Date) {
+        _ud.value?.apply {
+            this.d.value = value
+            _ud.value = this
+        }
+    }
+
+
+    fun getNewMonth(date: Date, list: List<Int>) {
+        uiUIState.value = MonthConfigImpl(IWeekConfigImpl()).getMonthItems(date, emptyList())
+        setVal(date)
     }
 }

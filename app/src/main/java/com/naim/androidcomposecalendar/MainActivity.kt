@@ -1,7 +1,8 @@
-
+package com.naim.androidcomposecalendar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
@@ -14,15 +15,17 @@ import androidx.compose.ui.unit.dp
 import com.naim.android_compose_calendar.config.month_config.MonthConfigImpl
 import com.naim.android_compose_calendar.config.week_config.IWeekConfigImpl
 import com.naim.android_compose_calendar.ui.AndroidComposeCalendar
+import com.naim.android_compose_calendar.ui.UIViewModel
 import com.naim.androidcomposecalendar.ui.theme.AndroidComposeCalendarTheme
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: UIViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             Column {
                 HelloContent()
-            AndroidComposeCalendar()
+                AndroidComposeCalendar(viewModel)
             }
 
 //            AndroidComposeCalendarTheme {
@@ -47,7 +50,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun HelloContent() {
-    var name by remember{ mutableStateOf("") }
+    var name by remember { mutableStateOf("") }
     Column(modifier = Modifier.padding(16.dp)) {
         Text(
             text = "Hello!",
