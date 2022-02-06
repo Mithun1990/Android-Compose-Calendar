@@ -7,7 +7,7 @@ import com.naim.android_compose_calendar.state.CalendarUiState
 import java.util.*
 
 class CalendarViewModel : ViewModel() {
-    private val _uiState: MutableLiveData<CalendarUiState> = MutableLiveData()
+    private val _uiState: MutableLiveData<CalendarUiState> = MutableLiveData(CalendarUiState(Date()))
     private val selectedDate = MutableLiveData(Date())
     val ui: LiveData<Date> = selectedDate
     val uiState: LiveData<CalendarUiState>
@@ -15,7 +15,6 @@ class CalendarViewModel : ViewModel() {
 
     fun selectedDate(value: Date) {
         println("Month $value")
-        selectedDate.value = value
         _uiState.value?.apply {
             this.selectedDate = value
             _uiState.value = this

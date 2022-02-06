@@ -89,8 +89,10 @@ fun AndroidComposeCalendar(viewModel: CalendarViewModel) {
             )
 
         }
+        var state = viewModel.uiState.observeAsState()
+        viewModel.selectedDate(Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 9) }.time)
         CalendarWeekRow(weekImpl)
-        CalendarMonthColumn(monthConfigImpl = monthConfig, viewModel)
+        CalendarMonthColumn(monthConfigImpl = monthConfig, viewModel, state.value!!)
     }
 
 }
@@ -126,10 +128,14 @@ fun CalendarWeekRow(weekConfigImpl: IWeekConfigImpl) {
 
 @SuppressLint("UnrememberedMutableState")
 @Composable
-fun CalendarMonthColumn(monthConfigImpl: MonthConfigImpl, viewModel: CalendarViewModel) {
+fun CalendarMonthColumn(
+    monthConfigImpl: MonthConfigImpl,
+    viewModel: CalendarViewModel,
+    state: CalendarUiState
+) {
     val monthItems = monthConfigImpl.getMonthItems(Date(), emptyList())
-    var state = viewModel.uiState.observeAsState(CalendarUiState(Date()))
-    println("Month ${state.value.selectedDate}")
+
+    println("Month ${state!!.selectedDate}")
     Column {
         LazyColumn {
             gridView(monthItems, gridColumn = 7) { item, itemIndex ->
@@ -148,7 +154,7 @@ fun CalendarMonthColumn(monthConfigImpl: MonthConfigImpl, viewModel: CalendarVie
                                 enabled = item.isSelectable
                             )
                             .background(
-                                if (state.value.selectedDate.formattedDate() == item.date!!.formattedDate())
+                                if (state.selectedDate.formattedDate() == item.date!!.formattedDate())
                                     Color.Magenta else Color.Transparent, shape = CircleShape
                             )
                             .padding(10.dp)
