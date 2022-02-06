@@ -20,15 +20,19 @@ fun Date.getWeekDay(): Int {
     return getInstance().get(Calendar.DAY_OF_WEEK)
 }
 
-fun Date.formattedDate(): Date {
-    val sdf = SimpleDateFormat(Constants.PREFER_DATE_FORMAT, Locale.ENGLISH)
-    val tempDate = sdf.format(getInstance().time).toString()
-    return sdf.parse(tempDate)
+fun Date.formattedDate(format: String = Constants.PREFER_DATE_FORMAT): Date {
+    val sdf = SimpleDateFormat(format, Locale.ENGLISH)
+    return sdf.parse(sdf.format(getInstance().time).toString())
         ?: this
 }
 
-fun Date.getMonthName(): String {
-    val sdf = SimpleDateFormat(Constants.MONTH_NAME_DATE_FORMAT, Locale.ENGLISH)
+fun Date.getMonthName(format: String = Constants.MONTH_NAME_DATE_FORMAT): String {
+    val sdf = SimpleDateFormat(format, Locale.ENGLISH)
+    return sdf.format(getInstance().time)
+}
+
+fun Date.getCalendarMonthTitle(format: String = Constants.CALENDAR_MONTH_TITLE_DATE_FORMAT): String {
+    val sdf = SimpleDateFormat(format, Locale.ENGLISH)
     return sdf.format(getInstance().time)
 }
 

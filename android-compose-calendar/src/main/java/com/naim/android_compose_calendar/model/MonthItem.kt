@@ -1,7 +1,6 @@
 package com.naim.android_compose_calendar.model
 
 import com.naim.android_compose_calendar.extensions.getMonthName
-import com.naim.android_compose_calendar.extensions.getTheDay
 import java.util.*
 
 class MonthItem constructor(monthItemBuilder: MonthItemBuilder) {
@@ -12,17 +11,17 @@ class MonthItem constructor(monthItemBuilder: MonthItemBuilder) {
 
     init {
         this.date = monthItemBuilder.date
-        this.isSelected = isSelected
-        this.isSelectable = isSelectable
-        this.isHoliday = isHoliday
+        this.isSelected = monthItemBuilder.isSelected
+        this.isSelectable = monthItemBuilder.isSelectable
+        this.isHoliday = monthItemBuilder.isHoliday
     }
 
 
     class MonthItemBuilder constructor(date: Date) {
         var date: Date? = null
         var isSelected: Boolean = false
-        var isSelectable = false
-        var isHoliday = false
+        var isSelectable: Boolean = false
+        var isHoliday: Boolean = false
 
         init {
             this.date = date
@@ -49,6 +48,6 @@ class MonthItem constructor(monthItemBuilder: MonthItemBuilder) {
     }
 
     override fun toString(): String {
-        return "MonthItem(date=${date!!.getMonthName()}, ${date!!.getTheDay()})"
+        return "MonthItem(date=${date!!.getMonthName()}, ${isSelectable})"
     }
 }

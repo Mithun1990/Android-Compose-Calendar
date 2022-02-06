@@ -1,6 +1,7 @@
 package com.naim.android_compose_calendar.config.month_config
 
 import com.naim.android_compose_calendar.model.Month
+import com.naim.android_compose_calendar.util.Constants
 import java.time.Year
 import java.util.*
 
@@ -14,7 +15,7 @@ abstract class BaseMonthConfig {
 
     fun getPrevMonthYear(month: Int, year: Int): Int {
         var year = year
-        if (month == 1) {
+        if (month == Constants.MONTH_START) {
             year -= 1
         }
         return year
@@ -22,8 +23,8 @@ abstract class BaseMonthConfig {
 
     fun getPrevMonth(month: Int): Int {
         var month = month
-        month = if (month == 0) {
-            12
+        month = if (month ==  Constants.MONTH_START) {
+            Constants.MONTH_END
         } else {
             month - 1
         }
@@ -31,7 +32,7 @@ abstract class BaseMonthConfig {
     }
 
     fun getNextMonth(month: Int): Int {
-        return if (month == 12) {
+        return if (month == Constants.MONTH_END) {
             0
         } else {
             month + 1
@@ -40,7 +41,7 @@ abstract class BaseMonthConfig {
 
     fun getNextYear(month: Int, year: Int): Int {
         var year = year
-        if (month == 12) {
+        if (month == Constants.MONTH_END) {
             year += 1
         }
         return year
