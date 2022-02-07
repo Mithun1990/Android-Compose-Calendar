@@ -59,7 +59,7 @@ fun calendarUI(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = { monthConfig.getMonthList(2021) }) {
+            IconButton(onClick = { viewModel.gotoPreviousYear() }) {
                 Icon(
                     painter = painterResource(id = R.drawable.icon_left_arriw_year),
                     contentDescription = "Previous Year",
@@ -95,15 +95,15 @@ fun calendarUI(
                         .size(24.dp)
                 )
             }
-
-            Icon(
-                painter = painterResource(id = R.drawable.icon_right_arriw_year),
-                contentDescription = "Next Year",
-                Modifier
-                    .padding(10.dp)
-                    .size(24.dp)
-            )
-
+            IconButton(onClick = { viewModel.gotoNextYear() }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.icon_right_arriw_year),
+                    contentDescription = "Next Year",
+                    Modifier
+                        .padding(10.dp)
+                        .size(24.dp)
+                )
+            }
         }
 
 //        viewModel.selectedDate(Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 9) }.time)
@@ -173,8 +173,17 @@ fun CalendarMonthColumn(
                                 enabled = item.isSelectable
                             )
                             .background(
-                                if (state.selectedDate.formattedDate() == item.date!!.formattedDate())
-                                    Color.Magenta else Color.Transparent, shape = CircleShape
+                                when {
+                                    state.selectedDate.formattedDate() == item.date!!.formattedDate() -> {
+                                        Color.Magenta
+                                    }
+                                    state.currentDate.formattedDate() == item.date!!.formattedDate() -> {
+                                        Color.Blue
+                                    }
+                                    else -> {
+                                        Color.Transparent
+                                    }
+                                }, shape = CircleShape
                             )
                             .padding(10.dp)
                             .layout { measurable, constraints ->
