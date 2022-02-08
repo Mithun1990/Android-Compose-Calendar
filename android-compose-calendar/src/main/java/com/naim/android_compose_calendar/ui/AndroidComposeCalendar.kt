@@ -25,29 +25,31 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.TextUnitType
 import androidx.compose.ui.unit.dp
 import com.naim.android_compose_calendar.R
-import com.naim.android_compose_calendar.config.month_config.MonthConfigImpl
-import com.naim.android_compose_calendar.config.week_config.IWeekConfigImpl
-import com.naim.android_compose_calendar.extensions.formattedDate
-import com.naim.android_compose_calendar.extensions.getTheDay
-import com.naim.android_compose_calendar.model.MonthItem
-import com.naim.android_compose_calendar.state.CalendarUiState
-import com.naim.android_compose_calendar.viewmodel.CalendarViewModel
+import com.naim.android_calendar_core.config.calendar_config.CalendarConfig
+import com.naim.android_calendar_core.config.week_config.IWeekConfig
+import com.naim.android_calendar_core.extensions.formattedDate
+import com.naim.android_calendar_core.extensions.getTheDay
+import com.naim.android_calendar_core.model.MonthItem
+import com.naim.android_calendar_core.state.CalendarUiState
+import com.naim.android_calendar_core.viewmodel.CalendarViewModel
+import java.util.*
 
 @OptIn(ExperimentalUnitApi::class)
 @Composable
-fun AndroidComposeCalendar(viewModel: CalendarViewModel) {
-
-    val weekImpl = IWeekConfigImpl()
-    val monthConfig = MonthConfigImpl(weekImpl)
-    calendarUI(monthConfig, weekImpl, viewModel)
+fun AndroidComposeCalendar(
+    viewModel: CalendarViewModel,
+    calendarConfig: CalendarConfig,
+    onDateSelected: (date: Date) -> Unit
+) {
+    calendarUI(viewModel, calendarConfig, onDateSelected)
 }
 
 @OptIn(ExperimentalUnitApi::class)
 @Composable
 fun calendarUI(
-    monthConfig: MonthConfigImpl,
-    weekConfigImpl: IWeekConfigImpl,
-    viewModel: CalendarViewModel
+    viewModel: CalendarViewModel,
+    calendarConfig: CalendarConfig,
+    onDateSelected: (date: Date) -> Unit
 ) {
     var state = viewModel.uiState.observeAsState()
     var stateMonth = viewModel.monthItems.observeAsState()
@@ -59,7 +61,10 @@ fun calendarUI(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = { viewModel.gotoPreviousYear() }) {
+            IconButton(
+                onClick = { viewModel.gotoPreviousYear() },
+                enabled = calendarConfig.isYearChangedEnabled
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.icon_left_arriw_year),
                     contentDescription = "Previous Year",
@@ -68,7 +73,10 @@ fun calendarUI(
                         .size(24.dp),
                 )
             }
-            IconButton(onClick = { viewModel.gotoPreviousMonth() }) {
+            IconButton(
+                onClick = { viewModel.gotoPreviousMonth() },
+                enabled = calendarConfig.isMonthChangeEnabled
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.icon_left_arriw_month),
                     contentDescription = "Previous Month",
@@ -80,13 +88,16 @@ fun calendarUI(
             Text(
                 text = state.value!!.selectedMonth,
                 Modifier.padding(10.dp),
-                style = TextStyle(
-                    color = Color.DarkGray, fontSize = TextUnit(
+                style = calendarConfig.monthTitleTextStyle ?: TextStyle(
+                    color = Color.LightGray, fontSize = TextUnit(
                         16f, TextUnitType.Sp
                     )
                 )
             )
-            IconButton(onClick = { viewModel.nextMonth() }) {
+            IconButton(
+                onClick = { viewModel.nextMonth() },
+                enabled = calendarConfig.isMonthChangeEnabled
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.icon_right_arriw_month),
                     contentDescription = "Next Month",
@@ -95,7 +106,10 @@ fun calendarUI(
                         .size(24.dp)
                 )
             }
-            IconButton(onClick = { viewModel.gotoNextYear() }) {
+            IconButton(
+                onClick = { viewModel.gotoNextYear() },
+                enabled = calendarConfig.isYearChangedEnabled
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.icon_right_arriw_year),
                     contentDescription = "Next Year",
@@ -107,10 +121,11 @@ fun calendarUI(
         }
 
 //        viewModel.selectedDate(Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 9) }.time)
-        CalendarWeekRow(weekConfigImpl)
+        CalendarWeekRow(calendarConfig.weekConfig)
         CalendarMonthColumn(
-            monthConfigImpl = monthConfig,
+            calendarConfig,
             viewModel,
+            onDateSelected,
             state.value!!,
             stateMonth.value!!
         )
@@ -118,7 +133,7 @@ fun calendarUI(
 }
 
 @Composable
-fun CalendarWeekRow(weekConfigImpl: IWeekConfigImpl) {
+fun CalendarWeekRow(weekConfigImpl: IWeekConfig) {
 
     Box(
         modifier = Modifier
@@ -149,12 +164,13 @@ fun CalendarWeekRow(weekConfigImpl: IWeekConfigImpl) {
 @SuppressLint("UnrememberedMutableState")
 @Composable
 fun CalendarMonthColumn(
-    monthConfigImpl: MonthConfigImpl,
+    calendarConfig: CalendarConfig,
     viewModel: CalendarViewModel,
+    onDateSelected: (date: Date) -> Unit,
     state: CalendarUiState,
     monthItems: List<MonthItem>
 ) {
-    println("Month ${state!!.selectedDate}")
+//    println("Month ${state!!.selectedDate}")
     Column {
         LazyColumn {
             gridView(monthItems, gridColumn = 7) { item, itemIndex ->
@@ -165,20 +181,36 @@ fun CalendarMonthColumn(
                 ) {
                     Text(
                         text = item.date!!.getTheDay().toString(),
-                        color = if (!item.isSelectable) Color.Yellow else Color.Black,
+                        color = when {
+                            !item.isSelectable -> {
+                                calendarConfig.disableDateTextColor
+                            }
+                            state.selectedDate.formattedDate() == item.date!!.formattedDate() -> {
+                                calendarConfig.selectedDateTextColor
+                            }
+                            state.currentDate.formattedDate() == item.date!!.formattedDate() -> {
+                                calendarConfig.currentDateTextColor
+                            }
+                            else -> {
+                                calendarConfig.normalDateTextColor
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(
-                                onClick = { viewModel.selectedDate(item.date!!) },
+                                onClick = {
+                                    viewModel.selectedDate(item.date!!)
+                                    onDateSelected.invoke(item.date!!)
+                                },
                                 enabled = item.isSelectable
                             )
                             .background(
                                 when {
                                     state.selectedDate.formattedDate() == item.date!!.formattedDate() -> {
-                                        Color.Magenta
+                                        calendarConfig.selectedDateBgColor
                                     }
                                     state.currentDate.formattedDate() == item.date!!.formattedDate() -> {
-                                        Color.Blue
+                                        calendarConfig.currentDateBgColor
                                     }
                                     else -> {
                                         Color.Transparent
@@ -203,85 +235,8 @@ fun CalendarMonthColumn(
                                 }
                             }
                             .clip(CircleShape),
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     )
-                }
-            }
-        }
-    }
-
-
-//    val noOfRow = monthItems.size / 7;
-//    for (i in 0 until noOfRow) {
-//        println("Month ${i * 7} ${i * 7 + 6}")
-//        CalendarMonthRow(
-//            monthItems.subList(
-//                i * 7,
-//                if (i * 7 + 7 > monthItems.size - 1) monthItems.size else i * 7 + 7
-//            )
-//        )
-//    }
-}
-
-@Composable
-fun CalendarMonthRow(splitMonthItems: List<MonthItem>) {
-    println("Month ${splitMonthItems}")
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        for (item in splitMonthItems) {
-            Box(
-                modifier = Modifier.weight(0.1f, fill = true),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = item.date!!.getTheDay().toString(),
-                    textAlign = TextAlign.Center
-                )
-            }
-
-        }
-    }
-}
-
-fun LazyListScope.gridItem() {
-
-}
-
-fun <T> LazyListScope.calendarGridView(
-    data: List<T>,
-    gridColumn: Int,
-    selectedValue: T,
-    onSelected: (T) -> Unit,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    itemContent: @Composable BoxScope.(T) -> Unit
-) {
-    val rows = if (data.count() == 0) 0 else 1 + (data.count() - 1) / gridColumn
-    items(rows) { rowIndex ->
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp),
-            horizontalArrangement = horizontalArrangement,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            for (columnIndex in 0 until gridColumn) {
-                val itemIndex = rowIndex * gridColumn + columnIndex
-                if (itemIndex < data.count()) {
-                    Box(
-                        modifier = Modifier
-                            .clickable { println("Month $itemIndex") }
-                            .weight(0.1f, fill = true),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        itemContent.invoke(this, data[itemIndex])
-                    }
-                } else {
-                    Spacer(modifier = Modifier.weight(1f, fill = true))
                 }
             }
         }
