@@ -1,4 +1,4 @@
-package com.naim.android_compose_calendar.events
+package com.naim.android_calendar_core.events
 
 import java.util.*
 
