@@ -6,14 +6,19 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.naim.android_calendar_core.config.calendar_config.CalendarConfig
 import com.naim.android_calendar_core.viewmodel.CalendarViewModel
 import com.naim.android_calendar_core.viewmodel.factory.CalendarViewModelFactory
 import com.naim.android_compose_calendar.ui.AndroidComposeCalendar
+import java.util.*
 
 class MainActivity : ComponentActivity() {
-    private val calendarConfig: CalendarConfig = CalendarConfig()
+    private val calendarConfig: CalendarConfig = CalendarConfig().apply {
+        date = Date()
+        currentDateTextColor=Color(0xFF03DAC5)
+    }
     private val calendarViewModel: CalendarViewModel by viewModels {
         CalendarViewModelFactory(
             calendarConfig
