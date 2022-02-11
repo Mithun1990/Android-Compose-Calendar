@@ -1,5 +1,8 @@
 # Android-Compose-Calendar
 ##This is library for android jetpack composeable or compose calendar
+>Screen shot
+![alt text](https://github.com/Mithun1990/Android-Compose-Calendar/blob/master/Screenshot_20220208-233329_AndroidComposeCalendar.jpg)
+
 >Step 1. Add the JitPack repository to your build file. Add it in your root build.gradle at the end of repositories.
 ```gradle
 	allprojects {
