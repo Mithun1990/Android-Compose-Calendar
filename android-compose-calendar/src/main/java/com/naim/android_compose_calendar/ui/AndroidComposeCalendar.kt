@@ -3,6 +3,8 @@ package com.naim.android_compose_calendar.ui
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -11,11 +13,15 @@ import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.consumeAllChanges
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -32,16 +38,34 @@ import com.naim.android_calendar_core.extensions.getTheDay
 import com.naim.android_calendar_core.model.MonthItem
 import com.naim.android_calendar_core.state.CalendarUiState
 import com.naim.android_calendar_core.viewmodel.CalendarViewModel
+import com.naim.android_compose_calendar.DragEvent
+import com.naim.android_compose_calendar.dispatch_provider.IDispatchProvider
+import com.naim.android_compose_calendar.events.CalendarEvent
 import java.util.*
+import androidx.compose.runtime.remember as remember
 
 @OptIn(ExperimentalUnitApi::class)
 @Composable
+@Deprecated(
+    message = "This function is deprecated",
+    replaceWith = ReplaceWith("AndroidComposableCalendar")
+)
 fun AndroidComposeCalendar(
     viewModel: CalendarViewModel,
     calendarConfig: CalendarConfig,
     onDateSelected: (date: Date) -> Unit
 ) {
-    calendarUI(viewModel, calendarConfig, onDateSelected)
+    calendarUI(viewModel, calendarConfig, {}, onDateSelected)
+}
+
+@OptIn(ExperimentalUnitApi::class)
+@Composable
+fun AndroidComposableCalendar(
+    viewModel: CalendarViewModel,
+    calendarConfig: CalendarConfig,
+    onCalendarEvent: (calendarEvent: CalendarEvent) -> Unit
+) {
+    calendarUI(viewModel, calendarConfig, onCalendarEvent)
 }
 
 @OptIn(ExperimentalUnitApi::class)
@@ -49,88 +73,130 @@ fun AndroidComposeCalendar(
 fun calendarUI(
     viewModel: CalendarViewModel,
     calendarConfig: CalendarConfig,
-    onDateSelected: (date: Date) -> Unit
+    onCalendarEvent: (calendarEvent: CalendarEvent) -> Unit,
+    onDateSelected: (date: Date) -> Unit = {}
+) {
+    var dragValue = DragEvent()
+    Column(Modifier.pointerInput(Unit) {
+        detectDragGestures(
+            onDrag = { change, dragAmount ->
+                dragValue = DragEvent(dragAmount.x, dragAmount.y)
+            },
+            onDragEnd = {
+                when{
+                    dragValue.xAmount<0->{
+                        viewModel.nextMonth()
+                    }
+                    dragValue.xAmount>0->{
+                        viewModel.gotoPreviousMonth()
+                    }
+                }
+            },
+        )
+    }) {
+        calendarDayView(viewModel, calendarConfig, onCalendarEvent)
+    }
+}
+
+@ExperimentalUnitApi
+@Composable
+fun calendarDayView(
+    viewModel: CalendarViewModel,
+    calendarConfig: CalendarConfig,
+    onCalendarEvent: (calendarEvent: CalendarEvent) -> Unit,
+    onDateSelected: (date: Date) -> Unit = {}
 ) {
     var state = viewModel.uiState.observeAsState()
     var stateMonth = viewModel.monthItems.observeAsState()
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 10.dp, end = 10.dp, top = 20.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.SpaceEvenly
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 10.dp, end = 10.dp, top = 20.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        IconButton(
+            onClick = {
+                viewModel.gotoPreviousYear()
+                onCalendarEvent.invoke(CalendarEvent.previousYearSelection(state.value!!.selectedDate))
+            },
+            enabled = calendarConfig.isYearChangedEnabled
         ) {
-            IconButton(
-                onClick = { viewModel.gotoPreviousYear() },
-                enabled = calendarConfig.isYearChangedEnabled
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_left_arriw_year),
-                    contentDescription = "Previous Year",
-                    Modifier
-                        .padding(10.dp)
-                        .size(24.dp),
-                )
-            }
-            IconButton(
-                onClick = { viewModel.gotoPreviousMonth() },
-                enabled = calendarConfig.isMonthChangeEnabled
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_left_arriw_month),
-                    contentDescription = "Previous Month",
-                    Modifier
-                        .padding(10.dp)
-                        .size(24.dp)
-                )
-            }
-            Text(
-                text = state.value!!.selectedMonth,
-                Modifier.padding(10.dp),
-                style = calendarConfig.monthTitleTextStyle ?: TextStyle(
-                    color = Color.LightGray, fontSize = TextUnit(
-                        16f, TextUnitType.Sp
-                    )
+            Icon(
+                painter = painterResource(id = R.drawable.icon_left_arriw_year),
+                contentDescription = "Previous Year",
+                Modifier
+                    .padding(10.dp)
+                    .size(24.dp),
+            )
+        }
+        IconButton(
+            onClick = {
+                viewModel.gotoPreviousMonth()
+                onCalendarEvent.invoke(CalendarEvent.previousMonthSelection(state.value!!.selectedDate))
+            },
+            enabled = calendarConfig.isMonthChangeEnabled
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.icon_left_arriw_month),
+                contentDescription = "Previous Month",
+                Modifier
+                    .padding(10.dp)
+                    .size(24.dp)
+            )
+        }
+        Text(
+            text = state.value!!.selectedMonth,
+            Modifier.padding(10.dp),
+            style = calendarConfig.monthTitleTextStyle ?: TextStyle(
+                color = Color.LightGray, fontSize = TextUnit(
+                    16f, TextUnitType.Sp
                 )
             )
-            IconButton(
-                onClick = { viewModel.nextMonth() },
-                enabled = calendarConfig.isMonthChangeEnabled
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_right_arriw_month),
-                    contentDescription = "Next Month",
-                    Modifier
-                        .padding(10.dp)
-                        .size(24.dp)
-                )
-            }
-            IconButton(
-                onClick = { viewModel.gotoNextYear() },
-                enabled = calendarConfig.isYearChangedEnabled
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_right_arriw_year),
-                    contentDescription = "Next Year",
-                    Modifier
-                        .padding(10.dp)
-                        .size(24.dp)
-                )
-            }
+        )
+        IconButton(
+            onClick = {
+                viewModel.nextMonth()
+                onCalendarEvent.invoke(CalendarEvent.nextMonthSelection(state.value!!.selectedDate))
+            },
+            enabled = calendarConfig.isMonthChangeEnabled
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.icon_right_arriw_month),
+                contentDescription = "Next Month",
+                Modifier
+                    .padding(10.dp)
+                    .size(24.dp)
+            )
         }
+        IconButton(
+            onClick = {
+                viewModel.gotoNextYear()
+                onCalendarEvent.invoke(CalendarEvent.nextYearSelection(state.value!!.selectedDate))
+            },
+            enabled = calendarConfig.isYearChangedEnabled
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.icon_right_arriw_year),
+                contentDescription = "Next Year",
+                Modifier
+                    .padding(10.dp)
+                    .size(24.dp)
+            )
+        }
+    }
 
 //        viewModel.selectedDate(Calendar.getInstance().apply { set(Calendar.DAY_OF_MONTH, 9) }.time)
-        CalendarWeekRow(calendarConfig.weekConfig)
-        CalendarMonthColumn(
-            calendarConfig,
-            viewModel,
-            onDateSelected,
-            state.value!!,
-            stateMonth.value!!
-        )
-    }
+    CalendarWeekRow(calendarConfig.weekConfig)
+    CalendarMonthColumn(
+        calendarConfig,
+        viewModel,
+        onCalendarEvent,
+        state.value!!,
+        stateMonth.value!!
+    )
 }
+
 
 @Composable
 fun CalendarWeekRow(weekConfigImpl: IWeekConfig) {
@@ -166,9 +232,10 @@ fun CalendarWeekRow(weekConfigImpl: IWeekConfig) {
 fun CalendarMonthColumn(
     calendarConfig: CalendarConfig,
     viewModel: CalendarViewModel,
-    onDateSelected: (date: Date) -> Unit,
+    onCalendarEvent: (calendarEvent: CalendarEvent) -> Unit,
     state: CalendarUiState,
-    monthItems: List<MonthItem>
+    monthItems: List<MonthItem>,
+    onDateSelected: (date: Date) -> Unit = {}
 ) {
 //    println("Month ${state!!.selectedDate}")
     Column {
@@ -200,6 +267,7 @@ fun CalendarMonthColumn(
                             .clickable(
                                 onClick = {
                                     viewModel.selectedDate(item.date!!)
+                                    onCalendarEvent.invoke(CalendarEvent.dateSelectionSelection(item.date!!))
                                     onDateSelected.invoke(item.date!!)
                                 },
                                 enabled = item.isSelectable
@@ -272,6 +340,22 @@ fun <T> LazyListScope.gridView(
                     Spacer(modifier = Modifier.weight(1f, fill = true))
                 }
             }
+        }
+    }
+}
+
+class TestModifier(modifier: Modifier, val string: (String) -> Unit) : Modifier.Element {
+    init {
+
+        var dragValue: DragEvent = DragEvent()
+        string.invoke("Value ${dragValue}")
+        modifier.pointerInput(Unit) {
+            detectDragGestures(onDrag = { change, dragAmount ->
+                dragValue = DragEvent(dragAmount.x, dragAmount.y)
+            }, onDragEnd = {
+                string.invoke("Value ${dragValue}")
+                println("Value ${dragValue}")
+            })
         }
     }
 }
