@@ -37,6 +37,7 @@ import com.naim.android_calendar_core.extensions.formattedDate
 import com.naim.android_calendar_core.extensions.getTheDay
 import com.naim.android_calendar_core.model.MonthItem
 import com.naim.android_calendar_core.state.CalendarUiState
+import com.naim.android_calendar_core.state.CalendarUiView
 import com.naim.android_calendar_core.viewmodel.CalendarViewModel
 import com.naim.android_compose_calendar.DragEvent
 import com.naim.android_compose_calendar.dispatch_provider.IDispatchProvider
@@ -55,7 +56,7 @@ fun AndroidComposeCalendar(
     calendarConfig: CalendarConfig,
     onDateSelected: (date: Date) -> Unit
 ) {
-    calendarUI(viewModel, calendarConfig, {}, onDateSelected)
+    calendarDayViewUI(viewModel, calendarConfig, {}, onDateSelected)
 }
 
 @OptIn(ExperimentalUnitApi::class)
@@ -65,12 +66,65 @@ fun AndroidComposableCalendar(
     calendarConfig: CalendarConfig,
     onCalendarEvent: (calendarEvent: CalendarEvent) -> Unit
 ) {
-    calendarUI(viewModel, calendarConfig, onCalendarEvent)
+    val calendarUiState by viewModel.uiState.observeAsState()
+    when (calendarUiState?.currentCalendarUiView) {
+        CalendarUiView.DAY_VIEW -> {
+            calendarDayViewUI(viewModel, calendarConfig, onCalendarEvent)
+        }
+        CalendarUiView.MONTH_VIEW -> {
+            calendarMonthViewUI(viewModel, calendarConfig, onCalendarEvent)
+        }
+    }
 }
 
 @OptIn(ExperimentalUnitApi::class)
 @Composable
-fun calendarUI(
+fun calendarMonthViewUI(
+    viewModel: CalendarViewModel,
+    calendarConfig: CalendarConfig,
+    onCalendarEvent: (calendarEvent: CalendarEvent) -> Unit
+) {
+    Column {
+        LazyColumn {
+            gridView(viewModel.monthList.value!!, 3) { item, itemIndex ->
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 5.dp)
+                            .weight(0.1f, fill = true)
+                            .height(50.dp)
+                            .background(Color.Magenta),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = item.monthTitle,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                                .clickable {
+                                    viewModel.setCalendarUiView(CalendarUiView.DAY_VIEW)
+                                    viewModel.selectedDate(item.selectedDate)
+                                },
+                            style = TextStyle(
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                fontSize = TextUnit(16f, TextUnitType.Sp)
+                            )
+                        )
+                    }
+
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalUnitApi::class)
+@Composable
+fun calendarDayViewUI(
     viewModel: CalendarViewModel,
     calendarConfig: CalendarConfig,
     onCalendarEvent: (calendarEvent: CalendarEvent) -> Unit,
@@ -83,11 +137,11 @@ fun calendarUI(
                 dragValue = DragEvent(dragAmount.x, dragAmount.y)
             },
             onDragEnd = {
-                when{
-                    dragValue.xAmount<0->{
+                when {
+                    dragValue.xAmount < 0 -> {
                         viewModel.nextMonth()
                     }
-                    dragValue.xAmount>0->{
+                    dragValue.xAmount > 0 -> {
                         viewModel.gotoPreviousMonth()
                     }
                 }
@@ -147,7 +201,11 @@ fun calendarDayView(
         }
         Text(
             text = state.value!!.selectedMonth,
-            Modifier.padding(10.dp),
+            Modifier
+                .padding(10.dp)
+                .clickable {
+                    viewModel.setCalendarUiView(CalendarUiView.MONTH_VIEW)
+                },
             style = calendarConfig.monthTitleTextStyle ?: TextStyle(
                 color = Color.LightGray, fontSize = TextUnit(
                     16f, TextUnitType.Sp
