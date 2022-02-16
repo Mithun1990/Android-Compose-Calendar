@@ -21,7 +21,10 @@
 ```kotlin
 private val calendarConfig: CalendarConfig = CalendarConfig().apply {
         date = Date()
-        currentDateTextColor=Color(0xFF03DAC5)
+       	currentDateTextColor = Color(0xFF03DAC5)
+        disableDateTextColor = Color(0xFFCCCCCC)
+        monthListBgColor = Color(0xFF87584E)
+        monthListItemTextColor = Color(0xFFFFFFee)
     }
 private val calendarViewModel: CalendarViewModel by viewModels {
         CalendarViewModelFactory(
@@ -31,9 +34,22 @@ private val calendarViewModel: CalendarViewModel by viewModels {
  ```
 >Step 4. Call the android compose calendar using config and view model and date change listener 
 ```kotlin
-AndroidComposeCalendar(calendarViewModel, calendarConfig,
-                onDateSelected = { date ->
-                    println("Selected date $date")
+ AndroidComposableCalendar(calendarViewModel, calendarConfig,
+                onCalendarEvent = {
+                    when (it) {
+                        is CalendarEvent.dateSelectionSelection -> {
+                            println("Selected date ${it.date}")
+                        }
+                        is CalendarEvent.nextMonthSelection -> {
+                            println("Selected date ${it.month}")
+                        }
+                        is CalendarEvent.onMonthSelection -> {
+                            println("Selected Month ${it.month}")
+                        }
+                        is CalendarEvent.nextYearSelection -> {
+                            println("Selected Year ${it.year}")
+                        }
+                    }
                 })
 ```
 >Available calendar configaration
