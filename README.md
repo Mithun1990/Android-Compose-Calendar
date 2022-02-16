@@ -14,8 +14,8 @@
 >Step 2. Add the dependency to your app level gradle file
 ```gradle
 	dependencies {
-	        implementation 'com.github.Mithun1990:Android-Compose-Calendar:1.0.0-alpha03'
-	}
+	        implementation 'com.github.Mithun1990:Android-Compose-Calendar:1.0.0'
+		}
 ```
 >Step 3. Initialize the different calendar configuration and view model with the config class
 ```kotlin
