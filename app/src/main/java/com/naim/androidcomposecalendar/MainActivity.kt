@@ -24,6 +24,9 @@ class MainActivity : ComponentActivity() {
     private val calendarConfig: CalendarConfig = CalendarConfig().apply {
         date = Date()
         currentDateTextColor = Color(0xFF03DAC5)
+        disableDateTextColor = Color(0xFFCCCCCC)
+        monthListBgColor = Color(0xFF87584E)
+        monthListItemTextColor = Color(0xFFFFFFee)
     }
     private val calendarViewModel: CalendarViewModel by viewModels {
         CalendarViewModelFactory(

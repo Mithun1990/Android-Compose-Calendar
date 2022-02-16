@@ -89,27 +89,28 @@ fun calendarMonthViewUI(
             gridView(viewModel.monthList.value!!, 3) { item, itemIndex ->
                 Row(
                     horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 5.dp)
                             .weight(0.1f, fill = true)
                             .height(50.dp)
-                            .background(Color.Magenta),
+                            .background(calendarConfig.monthListBgColor)
+                            .clickable {
+                                viewModel.setCalendarUiView(CalendarUiView.DAY_VIEW)
+                                viewModel.setMonth(item.selectedDate)
+                                viewModel.selectedDate(item.selectedDate)
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = item.monthTitle,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .wrapContentHeight()
-                                .clickable {
-                                    viewModel.setCalendarUiView(CalendarUiView.DAY_VIEW)
-                                    viewModel.selectedDate(item.selectedDate)
-                                },
-                            style = TextStyle(
-                                color = Color.White,
+                                .wrapContentHeight(),
+                            style = calendarConfig.monthListItemTextStyle ?: TextStyle(
+                                color = calendarConfig.monthListItemTextColor,
                                 textAlign = TextAlign.Center,
                                 fontSize = TextUnit(16f, TextUnitType.Sp)
                             )
@@ -181,7 +182,8 @@ fun calendarDayView(
                 contentDescription = "Previous Year",
                 Modifier
                     .padding(10.dp)
-                    .size(24.dp),
+                    .size(24.dp)
+                    .weight(.1f, true),
             )
         }
         IconButton(
@@ -197,15 +199,20 @@ fun calendarDayView(
                 Modifier
                     .padding(10.dp)
                     .size(24.dp)
+                    .weight(.1f, true)
             )
         }
         Text(
             text = state.value!!.selectedMonth,
             Modifier
                 .padding(10.dp)
+                .fillMaxWidth()
+                .wrapContentWidth()
                 .clickable {
+                    viewModel.getMonthList()
                     viewModel.setCalendarUiView(CalendarUiView.MONTH_VIEW)
-                },
+                }
+                .weight(.5f, true),
             style = calendarConfig.monthTitleTextStyle ?: TextStyle(
                 color = Color.LightGray, fontSize = TextUnit(
                     16f, TextUnitType.Sp
@@ -225,6 +232,7 @@ fun calendarDayView(
                 Modifier
                     .padding(10.dp)
                     .size(24.dp)
+                    .weight(.1f, true)
             )
         }
         IconButton(
@@ -240,6 +248,7 @@ fun calendarDayView(
                 Modifier
                     .padding(10.dp)
                     .size(24.dp)
+                    .weight(.1f, true)
             )
         }
     }
