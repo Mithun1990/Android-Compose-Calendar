@@ -37,7 +37,7 @@ android {
 }
 
 dependencies {
-    api('com.github.Mithun1990:Android-Calendar-Core:1.0.3')
+    api('com.github.Mithun1990:Android-Calendar-Core:1.0.5')
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
     implementation 'androidx.core:core-ktx:1.7.0'

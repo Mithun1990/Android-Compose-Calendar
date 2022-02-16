@@ -101,6 +101,7 @@ fun calendarMonthViewUI(
                                 viewModel.setCalendarUiView(CalendarUiView.DAY_VIEW)
                                 viewModel.setMonth(item.selectedDate)
                                 viewModel.selectedDate(item.selectedDate)
+                                onCalendarEvent.invoke(CalendarEvent.onMonthSelection(item))
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -173,7 +174,7 @@ fun calendarDayView(
         IconButton(
             onClick = {
                 viewModel.gotoPreviousYear()
-                onCalendarEvent.invoke(CalendarEvent.previousYearSelection(state.value!!.selectedDate))
+                onCalendarEvent.invoke(CalendarEvent.previousYearSelection(state.value!!.currentYear))
             },
             enabled = calendarConfig.isYearChangedEnabled
         ) {
@@ -189,7 +190,7 @@ fun calendarDayView(
         IconButton(
             onClick = {
                 viewModel.gotoPreviousMonth()
-                onCalendarEvent.invoke(CalendarEvent.previousMonthSelection(state.value!!.selectedDate))
+                onCalendarEvent.invoke(CalendarEvent.previousMonthSelection(state.value!!.currentMonth))
             },
             enabled = calendarConfig.isMonthChangeEnabled
         ) {
@@ -222,7 +223,7 @@ fun calendarDayView(
         IconButton(
             onClick = {
                 viewModel.nextMonth()
-                onCalendarEvent.invoke(CalendarEvent.nextMonthSelection(state.value!!.selectedDate))
+                onCalendarEvent.invoke(CalendarEvent.nextMonthSelection(state.value!!.currentMonth))
             },
             enabled = calendarConfig.isMonthChangeEnabled
         ) {
@@ -238,7 +239,7 @@ fun calendarDayView(
         IconButton(
             onClick = {
                 viewModel.gotoNextYear()
-                onCalendarEvent.invoke(CalendarEvent.nextYearSelection(state.value!!.selectedDate))
+                onCalendarEvent.invoke(CalendarEvent.nextYearSelection(state.value!!.currentYear))
             },
             enabled = calendarConfig.isYearChangedEnabled
         ) {

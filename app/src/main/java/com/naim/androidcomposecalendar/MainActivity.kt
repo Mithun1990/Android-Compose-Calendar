@@ -44,9 +44,14 @@ class MainActivity : ComponentActivity() {
                             println("Selected date ${it.date}")
                         }
                         is CalendarEvent.nextMonthSelection -> {
-                            println("Selected date ${it.date}")
+                            println("Selected date ${it.month}")
                         }
-
+                        is CalendarEvent.onMonthSelection -> {
+                            println("Selected Month ${it.month}")
+                        }
+                        is CalendarEvent.nextYearSelection -> {
+                            println("Selected Year ${it.year}")
+                        }
                     }
                 })
         }
